@@ -189,7 +189,7 @@ where:
 
 ### Mass and Stiffness Matrices construction
 For an element of length $dx$, the local mass matrix is: $$m_{elem} = \frac{dx}{6} \begin{bmatrix} 2 & 1 \\ 1 & 2 \end{bmatrix}$$
-For an element of length $dx$, the local stiffness matrix is: $$k_{elem} = \frac{1}{h} \begin{bmatrix} 1 & -1 \\ -1 & 1 \end{bmatrix}$$
+For an element of length $dx$, the local stiffness matrix is: $$k_{elem} = \frac{1}{dx} \begin{bmatrix} 1 & -1 \\ -1 & 1 \end{bmatrix}$$
 These local matrices are then assembled into the global matrices based on the connectivity of the elements.
 
 ----------------------------
