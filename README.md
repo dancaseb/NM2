@@ -32,7 +32,7 @@ The implementation consists of the following files:
 ## Mathematical Approach to solve the heat equation
 
 ### Time Discretization
-Euler's method is used for time discretization. 
+Euler's method is used for time discretization.
 
 ### Spatial Discretization (FEM)
 
@@ -154,7 +154,7 @@ We divide the spatial domain $[0,1]$ into $n_x$ equal elements:
 
 We use piecewise linear basis functions (hat functions) $\phi_i(x)$ for $i = 0, 1, 2, \ldots, n_x$:
 
-$$\phi_i(x) = 
+$$\phi_i(x) =
 \begin{cases}
 \frac{x - x_{i-1}}{x_i - x_{i-1}} & \text{if } x \in [x_{i-1}, x_i] \\
 \frac{x_{i+1} - x}{x_{i+1} - x_i} & \text{if } x \in [x_i, x_{i+1}] \\
@@ -199,6 +199,49 @@ These local matrices are then assembled into the global matrices based on the co
 For Dirichlet boundary conditions, we set:
 - $u^{n+1}_0 = f_0(t_{n+1})$
 - $u^{n+1}_{n_x} = f_1(t_{n+1})$
+------------------------
+### 5. Calculating the right-hand side
 
-We then solve the system only for the interior nodes, adjusting the right-hand side to account for the boundary values.
+Since we already know the boundary values from step 4, we only need to solve for the interior nodes. This requires modifying our system:
 
+$$(M + \Delta t \cdot k \cdot K) U^{n+1} = M U^n$$
+
+In the code the right hand side is named $b$. For the interior nodes ($i = 1, 2, \ldots, n_x-1$), we can rewrite our original equation
+
+$$\sum_{j=0}^{n_x} (M_{ij} + \Delta t \cdot k \cdot K_{ij}) u^{n+1}_j = \sum_{j=0}^{n_x} M_{ij} u^n_j$$
+
+by separating the known boundary values from the unknown interior values:
+
+$$\sum_{j=1}^{n_x-1} (M_{ij} + \Delta t \cdot k \cdot K_{ij}) u^{n+1}_j = \sum_{j=0}^{n_x} M_{ij} u^n_j - (M_{i0} + \Delta t \cdot k \cdot K_{i0}) u^{n+1}_0 - (M_{in_x} + \Delta t \cdot k \cdot K_{in_x}) u^{n+1}_{n_x}$$
+
+The right hand side vector is then calculated. For the stiffness matrix contributions (which apply to all interior nodes) we have:
+
+$$b_i = b_i - K_{i0} \cdot u^{n+1}_0 - K_{in_x} \cdot u^{n+1}_{n_x}$$
+
+For the mass matrix contributions, we need to consider the structure of the mass matrix for linear elements:
+
+1. For linear hat functions, the mass matrix $M$ has a tridiagonal structure
+2. This means $M_{ij}$ is non-zero only when nodes $i$ and $j$ are at most one element apart
+3. For most interior nodes $i$, the mass matrix entries $M_{i0}$ and $M_{in_x}$ connecting to boundary nodes are zero
+4. The only exceptions are node $i=1$ (connected to left boundary) and node $i=n_x-1$ (connected to right boundary)
+
+Therefore, we only need to subtract the mass matrix contributions for these special cases:
+
+For node $i=1$ (adjacent to left boundary):
+$$b_1 = b_1 - M_{10} \cdot u^{n+1}_0$$
+
+For node $i=n_x-1$ (adjacent to right boundary):
+$$b_{n_x-1} = b_{n_x-1} - M_{n_x-1,n_x} \cdot u^{n+1}_{n_x}$$
+
+----------
+
+### 6. Solving the System
+After calculating the right hand side, we can solve the system for the interior nodes:
+$$(M + \Delta t \cdot k \cdot K)_{interior} U^{n+1}_{interior} = b_{interior}$$
+
+We don't use the whole matrix $M + \Delta t \cdot k \cdot K$ because we don't need the rows and columns corresponding to the boundary nodes. Therefore, we only use the interior part of the matrix, which we denote by $(M + \Delta t \cdot k \cdot K)_{interior}$. Same applies for the right hand side vector $b$.
+
+We then update the solution vector $U^{n+1}$ with the solution for the interior nodes.
+
+## Examples
+In the file examples.ipynb you can find some examples of how to use the code.
