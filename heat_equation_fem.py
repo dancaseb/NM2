@@ -90,7 +90,7 @@ def solve_heat_equation_fem(k, T, f0, f1, g, nx, nt):
         # right-hand side vector: M*u^n
         b = np.zeros(nx+1)
 
-        # compute M*u^n for interior nodes
+        # compute b = M*u^n for interior nodes
         for i in range(1, nx):
             for j in range(nx+1):
                 b[i] += M[i, j] * u[n, j]
